@@ -1,0 +1,49 @@
+# Build files
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.nuget.props
+*.nuget.targets
+*.csproj.user
+*.lock.json
+
+# Logs & Debugging
+*.log
+*.tlog
+*.ncrunch*
+
+# Database files (SQLite example)
+*.db
+*.sqlite
+*.mdf
+*.ldf
+
+# Secrets & config
+secrets.json
+appsettings.Development.json
+appsettings.Local.json
+
+# Node.js (if frontend present)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# NPM & Yarn artifacts
+.npm/
+.yarn/
+.pnp.*
+
+# Docker & Kubernetes
+.dockerignore
+*.dockerfile
+.k8s/
+
+# JetBrains Rider
+.idea/
+
+# MacOS & System Files
+.DS_Store
+Thumbs.db
