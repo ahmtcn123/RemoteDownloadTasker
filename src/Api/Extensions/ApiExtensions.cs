@@ -111,7 +111,6 @@ namespace Api.Extensions
 
         public static void ConfigureApiConfig(IServiceCollection services, IConfiguration configuration)
         {
-            var appSettings = configuration.GetSection<AppSettings>("AppSettings");
         }
     }
 }
