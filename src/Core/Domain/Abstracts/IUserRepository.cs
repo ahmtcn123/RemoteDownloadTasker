@@ -8,8 +8,9 @@ namespace Core.Domain.Abstracts
     {
         Task<User?> GetUserById(int id);
         Task<User?> GetUserByEmail(string email);
-        Task<User> AddUser(AddUserDTO user);
+        Task<User> AddUser(AddUserDto user);
         Task<User> UpdateUser(User user);
+        Task<User?> GetUserByRefreshToken(string refreshToken);
     }
 }
 

@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 
-using Infastructure.Extensions;
+using Infrastructure.Extensions;
 using Core.Extensions;
 using Api.Extensions;
 
@@ -18,9 +18,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApiServices();
 builder.Services.AddApiJwtBearer(builder.Configuration);
 
-//Initialize Infastructure Extensions
-builder.Services.AddInfastructureApplicationDbContext(builder.Configuration);
-builder.Services.AddInfastructureRepositories();
+//Initialize Infrastructure Extensions
+builder.Services.AddInfrastructureApplicationDbContext(builder.Configuration);
+builder.Services.AddInfrastructureRepositories();
 
 //Initialize Core Extensions
 builder.Services.AddCoreServices();
@@ -36,6 +36,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseAuthentication();
+app.AddApiMiddlewares();
 app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();

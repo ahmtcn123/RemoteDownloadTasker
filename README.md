@@ -3,12 +3,13 @@
 This is a try out project for me.
 
 ## Features
-✅ Fluent Validation
-✅ Entity Framework Core
-✅ PostgreSql
-✅ JWT Authentication
-✅ Swagger
-✅ AutoMapper
+ - ✅ Clean Architecture
+ - ✅ Fluent Validation
+ - ✅ Entity Framework Core
+ - ✅ PostgreSql
+ - ✅ JWT Authentication
+ - ✅ Swagger
+ - ✅ AutoMapper
 
 ## How to run the migration
 ```bash

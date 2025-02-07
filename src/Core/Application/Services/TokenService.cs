@@ -4,9 +4,8 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-
 using Core.Domain.Entities;
-using Core.Application.Abstracts;
+using Core.Domain.Abstracts;
 
 namespace Core.Application.Services
 {
@@ -24,24 +23,25 @@ namespace Core.Application.Services
         // Generate Access Token
         public string GenerateAccessToken(User user)
         {
-
             if (_jwtSecret == null) throw new Exception("JWT Secret is not set");
 
             var claims = new[]
             {
-            new Claim(ClaimTypes.Name, user.Email),
-            new Claim(ClaimTypes.Role, user.Role.ToString())
-        };
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Email),
+                new Claim(ClaimTypes.Role, user.Role.ToString())
+            };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+            var signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+            var expiresInMinutes = _configuration.GetValue<int>("JwtSettings:ExpiresInMinutes");
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["JwtSettings:Issuer"],
                 audience: _configuration["JwtSettings:Audience"],
+                expires: DateTime.Now.AddMinutes(expiresInMinutes),
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(30),  // 30-minute expiration for the access token
-                signingCredentials: creds
+                signingCredentials: signingCredentials
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -55,6 +55,7 @@ namespace Core.Application.Services
             {
                 rng.GetBytes(randomNumber);
             }
+
             return Convert.ToBase64String(randomNumber);
         }
 
@@ -69,7 +70,7 @@ namespace Core.Application.Services
                 ValidIssuer = _configuration["JwtSettings:Issuer"],
                 ValidateAudience = true,
                 ValidAudience = _configuration["JwtSettings:Audience"],
-                ValidateLifetime = false,  // Ignore the token's expiration
+                ValidateLifetime = false, // Ignore the token's expiration
                 IssuerSigningKey = new SymmetricSecurityKey(key),
             };
 
@@ -108,5 +109,4 @@ namespace Core.Application.Services
             }
         }
     }
-
 }

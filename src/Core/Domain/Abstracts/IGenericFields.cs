@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Core.Abstracts
+namespace Core.Domain.Abstracts
 {
 
     public interface IGenericFields

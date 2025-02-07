@@ -1,17 +1,13 @@
+using Core.Domain.Abstracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-
-using Core.Abstracts;
 using Core.Domain.Entities;
 
 namespace Infrastructure.Persistence
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options) { }
-
         public DbSet<User> Users { get; set; }
         //public DbSet<DownloadedFile> DownloadedFiles { get; set; }
 
@@ -21,7 +17,21 @@ namespace Infrastructure.Persistence
             return base.SaveChanges(acceptAllChangesOnSuccess);
         }
 
-        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .HasDatabaseName("IX_User_Email")
+                .IsUnique();
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.RefreshToken)
+                .HasDatabaseName("IX_User_RefreshToken")
+                .IsUnique();
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
+            CancellationToken cancellationToken = default)
         {
             OnBeforeSave();
             return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
@@ -36,12 +46,12 @@ namespace Infrastructure.Persistence
         private void OnBeforeSave()
         {
             var addedEntities = ChangeTracker.Entries()
-                                    .Where(i => i.State == EntityState.Added)
-                                    .Select(i => (GenericFields)i.Entity);
+                .Where(i => i.State == EntityState.Added)
+                .Select(i => (GenericFields)i.Entity);
 
             var modifiedEntities = ChangeTracker.Entries()
-                                    .Where(i => i.State == EntityState.Modified)
-                                    .Select(i => (GenericFields)i.Entity);
+                .Where(i => i.State == EntityState.Modified)
+                .Select(i => (GenericFields)i.Entity);
 
             PrepareEntities(addedEntities);
 
@@ -49,16 +59,14 @@ namespace Infrastructure.Persistence
             //{
             //    UpdateModifiedEntities(modifiedEntities);
             //}
-
         }
 
-        private void PrepareEntities(IEnumerable<GenericFields> entities)
+        private static void PrepareEntities(IEnumerable<GenericFields> entities)
         {
             foreach (var entity in entities)
             {
                 if (entity.CreatedAt == DateTime.MinValue)
                     entity.CreatedAt = DateTime.UtcNow;
-
             }
         }
 

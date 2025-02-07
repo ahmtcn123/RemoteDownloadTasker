@@ -1,7 +1,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Core.Abstracts;
+using Core.Domain.Abstracts;
 
 namespace Core.Domain.Entities
 {
@@ -36,5 +36,8 @@ namespace Core.Domain.Entities
         [Column("refresh_token")]
         [MaxLength(255)]
         public required string RefreshToken { get; set; }
+        
+        [Column("refresh_token_expiry")]
+        public required DateTime RefreshTokenExpiry { get; set; }
     }
 }

@@ -4,3 +4,16 @@ GET {{Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+POST {{Api_HostAddress}}/api/Auth/register
+Accept: application/json
+Content-Type: application/json
+
+{
+  "firstName": "Ahmetcan",
+  "lastName": "Aksu",
+  "email": "ahmetcanco@gmail.com",
+  "password": "MySuperSecurePassword"
+}
+
+
+###

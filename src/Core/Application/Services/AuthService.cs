@@ -1,74 +1,105 @@
 using AutoMapper;
-
-using Core.Application.Abstracts;
+using Core.Domain.Abstracts;
 using Core.Application.DTOs;
+using Core.Application.Exceptions;
 using Core.Domain.Abstracts;
 using Core.Domain.Entities;
+using Microsoft.Extensions.Configuration;
 
 namespace Core.Application.Services
 {
-    public class AuthService : IAuthService
+    public class AuthService(
+        IUserRepository userRepository,
+        IMapper mapper,
+        ITokenService tokenService,
+        IPasswordHashService passwordHashService,
+        IConfiguration configuration
+    )
+        : IAuthService
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IMapper _mapper;
-        private readonly ITokenService _tokenService;
-
-        public AuthService(IUserRepository userRepository, IMapper mapper, ITokenService tokenService)
+        public async Task<GenericResponse<AuthSerivceResponse>> Register(RegisterRequest user)
         {
-            _userRepository = userRepository;
-            _mapper = mapper;
-            _tokenService = tokenService;
+            var isEmailTaken = await userRepository.GetUserByEmail(user.Email);
+            if (isEmailTaken != null)
+            {
+                throw new BadRequestException("Email is already taken");
+            }
+
+            var newUserData = mapper.Map<AddUserDto>(user);
+            var refreshToken = tokenService.GenerateRefreshToken();
+
+            // Hash password
+            newUserData.Password = passwordHashService.HashPassword(newUserData.Password);
+            newUserData.RefreshToken = refreshToken;
+            newUserData.RefreshTokenExpiry = DateTime.UtcNow.AddDays(2);
+
+            var newUser = await userRepository.AddUser(newUserData);
+            var accessToken = tokenService.GenerateAccessToken(newUser);
+
+            return new GenericResponse<AuthSerivceResponse>
+            {
+                Success = true,
+                Message = "User registered successfully",
+                Data = new AuthSerivceResponse
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken,
+                    ExpiresIn = TimeSpan.FromMinutes(30)
+                }
+            };
         }
 
-        public Task<(bool Success, string Message, string Token)> Login(User user)
+        public async Task<GenericResponse<AuthSerivceResponse>> Login(LoginRequest user)
+        {
+            var userInfo = await userRepository.GetUserByEmail(user.Email);
+
+            if (userInfo == null)
+            {
+                throw new UnauthorizedException("Wrong email or password");
+            }
+
+            var passwordSuccess = passwordHashService.VerifyPassword(user.Password, userInfo.Password);
+            if (!passwordSuccess)
+            {
+                throw new UnauthorizedException("Wrong email or password");
+            }
+
+            var accessToken = tokenService.GenerateAccessToken(userInfo);
+            var refreshToken = tokenService.GenerateRefreshToken();
+
+            userInfo.RefreshToken = refreshToken;
+            userInfo.RefreshTokenExpiry = DateTime.UtcNow.AddDays(2);
+            await userRepository.UpdateUser(userInfo);
+
+            return new GenericResponse<AuthSerivceResponse>
+            {
+                Success = true,
+                Message = "Welcome",
+                Data = new AuthSerivceResponse
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken,
+                    ExpiresIn = TimeSpan.FromMinutes(30)
+                }
+            };
+        }
+
+        public Task<GenericResponse<MeResponse>> Me(int userId)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<GenericResponse<AuthResponse>> Register(RegisterRequest user)
+        public async Task<GenericResponse<AuthSerivceResponse>> RefreshToken(string token)
         {
-            var isEmailTaken = await _userRepository.GetUserByEmail(user.Email);
-            Console.WriteLine($"Is email taken $isEmailTaken");
-            if (isEmailTaken != null)
+            var foundUser = await userRepository.GetUserByRefreshToken(token);
+
+            if (foundUser == null || foundUser.RefreshTokenExpiry < DateTime.UtcNow)
             {
-                return new GenericResponse<AuthResponse>
-                {
-                    Success = false,
-                    Message = "Email is already taken",
-                    Data = new AuthResponse
-                    {
-                        AccessToken = "",
-                        RefreshToken = ""
-                    }
-                };
             }
 
-            //Log user data
-            Console.WriteLine($"User: {user}");
-
-            var newUserData = _mapper.Map<AddUserDTO>(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
-            newUserData.RefreshToken = refreshToken;
-
-
-            Console.WriteLine($"newUserData: {newUserData.Email}, {newUserData.FirstName}, {newUserData.LastName}, {newUserData.Password}, {newUserData.RefreshToken}");
-            var newUser = await _userRepository.AddUser(newUserData);
-            var accessToken = _tokenService.GenerateAccessToken(newUser);
-
-            Console.WriteLine("User created refresh token");
-
-            //await _userRepository.UpdateUser(newUser);
-
-            return new GenericResponse<AuthResponse>
-            {
-                Success = true,
-                Message = "User registered successfully",
-                Data = new AuthResponse
-                {
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken,
-                }
-            };
+            //var principal = tokenService.GetPrincipalFromExpiredToken(token);
+            Console.WriteLine($"Token: {token}");
+            throw new NotImplementedException();
         }
     }
 }
